@@ -1,6 +1,5 @@
 options(timeout = 120)
 
-# Load required libraries
 library(quantmod)
 library(tidyverse)
 library(lubridate)
@@ -9,28 +8,16 @@ library(dotenv)
 
 load_dot_env()
 
-# Define stock tickers
 tickers <- c(
-  "AAPL",
-  "MSFT",
-  "AMZN",
-  "GOOGL",
-  "TSLA",
-  "NVDA",
-  "JPM",
-  "KO",
-  "WMT",
-  "META"
+  "AAPL","MSFT","AMZN","GOOGL","TSLA",
+  "NVDA","JPM","KO","WMT","META"
 )
 
-# Define time range
 start_date <- as.Date("2019-01-01")
 end_date <- Sys.Date()
 
-# Create list to store stock data
-stock_data_list <- list()
+price_list <- list()
 
-# Download data from Yahoo Finance
 for (ticker in tickers) {
 
   tryCatch({
@@ -43,7 +30,7 @@ for (ticker in tickers) {
       auto.assign = FALSE
     )
 
-    stock_data_list[[ticker]] <- data
+    price_list[[ticker]] <- Ad(data)
     print(paste("Downloaded", ticker))
 
   }, error = function(e) {
@@ -54,41 +41,28 @@ for (ticker in tickers) {
 
 }
 
+# Merge all successful downloads
+prices <- do.call(merge, price_list)
+
+# Rename columns
+colnames(prices) <- names(price_list)
+
 # Convert to dataframe
-stock_prices <- bind_rows(
-  lapply(names(stock_data_list), function(ticker) {
-
-    data <- stock_data_list[[ticker]]
-
-    df <- data.frame(
-      date = index(data),
-      coredata(data)
-    )
-
-    df$ticker <- ticker
-    df
-
-  })
+stock_prices <- data.frame(
+  date = index(prices),
+  coredata(prices)
 )
-
-# Preview dataset
-head(stock_prices)
-
-# Save dataset locally
-write.csv(stock_prices, "data/stock_prices.csv", row.names = FALSE)
-
-# Set FRED API key
-fredr_set_key(Sys.getenv("FRED_API_KEY"))
-
-# Fetch 3-Month Treasury Bill rate
-risk_free_rate <- fredr(
-  series_id = "DTB3",
-  observation_start = as.Date("2019-01-01"),
-  observation_end = Sys.Date()
-)
-
-# Preview data
-head(risk_free_rate)
 
 # Save dataset
+write.csv(stock_prices, "data/stock_prices.csv", row.names = FALSE)
+
+# Fetch risk free rate
+fredr_set_key(Sys.getenv("FRED_API_KEY"))
+
+risk_free_rate <- fredr(
+  series_id = "DTB3",
+  observation_start = start_date,
+  observation_end = end_date
+)
+
 write.csv(risk_free_rate, "data/risk_free_rate.csv", row.names = FALSE)
