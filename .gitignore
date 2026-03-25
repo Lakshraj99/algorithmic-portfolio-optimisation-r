@@ -1,0 +1,14 @@
+.Rhistory
+.RData
+.env
+*.csv
+*.xlsx
+*.json
+Rplots.pdf
+!data/stock_prices.csv
+!data/stock_returns.csv
+!data/risk_free_rate.csv
+!data/summary_statistics.csv
+!data/optimal_weights.csv
+!data/portfolio_comparison.csv
+!data/regression_results.csv
